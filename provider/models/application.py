@@ -125,9 +125,6 @@ class Application(models.Model):
             Application.GRANT_AUTHORIZATION_CODE,
             Application.GRANT_IMPLICIT,
         )
-        hs_forbidden_grant_types = (
-            Application.GRANT_IMPLICIT,
-        )
 
         redirect_uris = self.redirect_uris.strip().split()
         allowed_schemes = set(s.lower() for s in self.get_allowed_schemes())
@@ -156,6 +153,13 @@ class Application(models.Model):
 
     def allow_grant_type(self, *grant_types):
         return self.authorization_grant_type in grant_types
+
+    def is_usable(self, request):
+        """
+        Determines whether the application can be used.
+        :param request: Request being processed
+        """
+        return True
 
 
 def get_application_model():

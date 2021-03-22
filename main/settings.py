@@ -124,6 +124,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+DEFAULT_CHARSET = "utf-8"
+
 try:
     from .provider_settings import *
 except ImportError:
