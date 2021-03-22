@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from main.settings import auth_settings
 from provider.generators import generate_client_id, generate_client_secret
+from provider.validators import RedirectURIValidator, WildcardSet
 
 
 class ApplicationManager(models.Manager):
@@ -116,6 +117,45 @@ class Application(models.Model):
                     return True
 
         return False
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        grant_types = (
+            Application.GRANT_AUTHORIZATION_CODE,
+            Application.GRANT_IMPLICIT,
+        )
+        hs_forbidden_grant_types = (
+            Application.GRANT_IMPLICIT,
+        )
+
+        redirect_uris = self.redirect_uris.strip().split()
+        allowed_schemes = set(s.lower() for s in self.get_allowed_schemes())
+
+        if redirect_uris:
+            validator = RedirectURIValidator(WildcardSet())
+            for uri in redirect_uris:
+                validator(uri)
+                scheme = urlparse(uri).scheme
+                if scheme not in allowed_schemes:
+                    raise ValidationError(_("Unauthorized redirect scheme: {scheme}").format(scheme=scheme))
+
+        elif self.authorization_grant_type in grant_types:
+            raise ValidationError(
+                _("redirect_uris cannot be empty with grant_type {grant_type}").format(
+                    grant_type=self.authorization_grant_type
+                )
+            )
+
+    def get_allowed_schemes(self):
+        """
+        Returns the list of redirect schemes allowed by the Application.
+        By default, returns `ALLOWED_REDIRECT_URI_SCHEMES`.
+        """
+        return auth_settings.ALLOWED_REDIRECT_URI_SCHEMES
+
+    def allow_grant_type(self, *grant_types):
+        return self.authorization_grant_type in grant_types
 
 
 def get_application_model():

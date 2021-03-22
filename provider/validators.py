@@ -29,3 +29,17 @@ class RedirectURIValidator(URIValidator):
         scheme, netloc, path, query, fragment = urlsplit(value)
         if fragment and not self.allow_fragments:
             raise ValidationError("Redirect URIs must not contain fragments")
+
+##
+# WildcardSet is a special set that contains everything.
+# This is required in order to move validation of the scheme from
+# URLValidator (the base class of URIValidator), to OAuth2Application.clean().
+
+
+class WildcardSet(set):
+    """
+    A set that always returns True on `in`.
+    """
+
+    def __contains__(self, item):
+        return True
