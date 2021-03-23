@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 
 AUTH_PROVIDER = {
@@ -11,7 +12,7 @@ USER_SETTINGS = getattr(settings, 'AUTH_PROVIDER', None)
 APPLICATION_MODEL = getattr(settings, "PROVIDER_APPLICATION_MODEL", "provider.Application")
 ACCESS_TOKEN_MODEL = getattr(settings, "PROVIDER_ACCESS_TOKEN_MODEL", "provider.AccessToken")
 ID_TOKEN_MODEL = getattr(settings, "PROVIDER_ID_TOKEN_MODEL", "provider.IDToken")
-# GRANT_MODEL = getattr(settings, "PROVIDER_GRANT_MODEL", "provider.Grant")
+GRANT_MODEL = getattr(settings, "PROVIDER_GRANT_MODEL", "provider.Grant")
 REFRESH_TOKEN_MODEL = getattr(settings, "PROVIDER_REFRESH_TOKEN_MODEL", "provider.RefreshToken")
 
 DEFAULTS = {
@@ -21,22 +22,40 @@ DEFAULTS = {
     "APPLICATION_MODEL": APPLICATION_MODEL,
     "ACCESS_TOKEN_MODEL": ACCESS_TOKEN_MODEL,
     "REFRESH_TOKEN_MODEL": REFRESH_TOKEN_MODEL,
+    "GRANT_MODEL": GRANT_MODEL,
     "ID_TOKEN_MODEL": ID_TOKEN_MODEL,
     "AUTHORIZATION_CODE_EXPIRE_SECONDS": 60,
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "ID_TOKEN_EXPIRE_SECONDS": 3600,
     "REFRESH_TOKEN_EXPIRE_SECONDS": None,
     "ALLOWED_REDIRECT_URI_SCHEMES": ["http", "https"],
+    "SCOPES": {"read": "Reading scope", "write": "Writing scope"},
+    "DEFAULT_SCOPES": ["__all__"],
+    "SCOPES_BACKEND_CLASS": "oauth2_provider.scopes.SettingsScopes",
+    "_SCOPES": [],
+    "_DEFAULT_SCOPES": [],
+    "EXTRA_SERVER_KWARGS": {},
+    "OAUTH2_SERVER_CLASS": "oauthlib.oauth2.Server",
+    "OAUTH2_VALIDATOR_CLASS": "provider.auth_validators.OAuth2Validator",
+    "OAUTH2_BACKEND_CLASS": "provider.auth_backends.OAuthLibCore",
 }
 
 IMPORT_STRINGS = (
     "CLIENT_ID_GENERATOR_CLASS",
     "CLIENT_SECRET_GENERATOR_CLASS",
+    "OAUTH2_SERVER_CLASS",
+    "OAUTH2_BACKEND_CLASS",
+    "OAUTH2_VALIDATOR_CLASS",
 )
 
 MANDATORY = (
     "CLIENT_ID_GENERATOR_CLASS",
     "CLIENT_SECRET_GENERATOR_CLASS",
+    "OAUTH2_SERVER_CLASS",
+    "SCOPES",
+    "OAUTH2_BACKEND_CLASS",
+    "OAUTH2_VALIDATOR_CLASS",
+    "ALLOWED_REDIRECT_URI_SCHEMES",
 )
 
 
@@ -95,6 +114,20 @@ class ProviderSettings:
 
         if val and attr in self.import_strings:
             val = perform_import(val, attr)
+
+        # Overriding special settings
+        if attr == "_SCOPES":
+            val = list(self.SCOPES.keys())
+        if attr == "_DEFAULT_SCOPES":
+            if "__all__" in self.DEFAULT_SCOPES:
+                val = list(self._SCOPES)
+            else:
+                val = []
+                for scope in self.DEFAULT_SCOPES:
+                    if scope in self._SCOPES:
+                        val.append(scope)
+                    else:
+                        raise ImproperlyConfigured("Defined DEFAULT_SCOPES not present in SCOPES")
         self.validate_setting(attr, val)
         setattr(self, attr, val)
         return val
