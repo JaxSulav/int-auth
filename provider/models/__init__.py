@@ -9,6 +9,7 @@ from .access_token import AccessToken, get_access_token_model
 from .application import Application, get_application_model
 from .id_token import IDToken, get_id_token_model
 from .refresh_token import RefreshToken, get_refresh_token_model
+from .grant import Grant, get_grant_model
 from main.settings import auth_settings
 
 logger = logging.getLogger(__name__)
