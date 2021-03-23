@@ -157,7 +157,7 @@ class Application(models.Model):
         """
         return auth_settings.ALLOWED_REDIRECT_URI_SCHEMES
 
-    def allow_grant_type(self, *grant_types):
+    def allows_grant_type(self, *grant_types):
         return self.authorization_grant_type in grant_types
 
     def is_usable(self, request):
