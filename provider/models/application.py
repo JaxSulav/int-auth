@@ -52,6 +52,10 @@ class Application(models.Model):
         (GRANT_CLIENT_CREDENTIALS, _("Client credentials")),
         (GRANT_OPENID_HYBRID, _("OpenID connect hybrid")),
     )
+    RESPONSE_CODE = "code"
+    RESPONSE_TYPES = (
+        (RESPONSE_CODE, _("Authorization code")),
+    )
 
     id = models.BigAutoField(primary_key=True)
     client_id = models.CharField(max_length=100, unique=True, default=generate_client_id, db_index=True)
@@ -69,6 +73,8 @@ class Application(models.Model):
     client_secret = models.CharField(
         max_length=255, blank=True, default=generate_client_secret, db_index=True
     )
+    response_type = models.CharField(max_length=4, choices=RESPONSE_TYPES, null=True, blank=True)
+    scopes = models.TextField(null=True, blank=True)
     name = models.CharField(max_length=255, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
