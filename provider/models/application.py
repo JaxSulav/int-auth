@@ -76,6 +76,8 @@ class Application(models.Model):
     response_type = models.CharField(max_length=4, choices=RESPONSE_TYPES, null=True, blank=True)
     scopes = models.TextField(null=True, blank=True)
     name = models.CharField(max_length=255, blank=True)
+    skip_authorization = models.BooleanField(default=False)
+    
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
