@@ -65,6 +65,19 @@ class AccessToken(models.Model):
         """
         return not self.is_expired() and self.allow_scopes(scopes)
 
+    def allow_scopes(self, scopes):
+        """
+        Check if the token allows the provided scopes
+        :param scopes: An iterable containing the scopes to check
+        """
+        if not scopes:
+            return True
+
+        provided_scopes = set(self.scope.split())
+        resource_scopes = set(scopes)
+
+        return resource_scopes.issubset(provided_scopes)
+
     def is_expired(self):
         """
         Check token expiration with timezone awareness
