@@ -14,10 +14,6 @@ import os
 
 from pathlib import Path
 
-from django.conf import settings
-from django.utils.module_loading import import_string
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,24 +27,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'rtkfo9ok4jxp-%v3u46xiwm^#%=scfxc0ga*m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', True)
 
-AUTH_PROVIDER = {
-    "CLIENT_ID_GENERATOR_CLASS": "provider.generators.ClientIdGenerator",
-    "CLIENT_SECRET_GENERATOR_CLASS": "provider.generators.ClientSecretGenerator"
-}
-
-USER_SETTINGS = getattr(settings, 'AUTH_PROVIDER', None)
-
-DEFAULTS = {
-    "CLIENT_ID_GENERATOR_CLASS": "provider.generators.ClientIdGenerator",
-    "CLIENT_SECRET_GENERATOR_CLASS": "provider.generators.ClientSecretGenerator",
-    "CLIENT_SECRET_GENERATOR_LENGTH": 128,
-}
-
-IMPORT_STRINGS = (
-    "CLIENT_ID_GENERATOR_CLASS",
-    "CLIENT_SECRET_GENERATOR_CLASS",
-)
-
 ALLOWED_HOSTS = []
 
 # Application definition
@@ -60,6 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+INNER_APPS = [
+    'provider.apps.ProviderConfig',
+]
+
+INSTALLED_APPS += INNER_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -140,68 +124,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+DEFAULT_CHARSET = "utf-8"
 
-def perform_import(val, setting_name):
-    """
-    If the given setting is a string import notation,
-    then perform the necessary import or imports.
-    """
-    if val is None:
-        return None
-    elif isinstance(val, str):
-        return import_from_string(val, setting_name)
-    elif isinstance(val, (list, tuple)):
-        return [import_from_string(item, setting_name) for item in val]
-    return val
-
-
-def import_from_string(val, setting_name):
-    """
-    Attempt to import a class from a string representation.
-    """
-    try:
-        return import_string(val)
-    except ImportError as e:
-        msg = "Could not import %r for setting %r. %s: %s." % (val, setting_name, e.__class__.__name__, e)
-        raise ImportError(msg)
-
-class ProviderSettings:
-    """
-    A setting object that allows provider settings to be accessed as properties.
-    """
-
-    def __init__(self, user_settings=None, defaults=None, import_strings=None):
-        self._user_settings = user_settings or {}
-        self.defaults = defaults or DEFAULTS
-        self.import_strings = import_strings or IMPORT_STRINGS
-
-    @property
-    def user_settings(self):
-        if not hasattr(self, "_user_settings"):
-            self._user_settings = getattr(settings, "AUTH_PROVIDER", {})
-        return self._user_settings
-
-    def __getattr__(self, attr):
-        if attr not in self.defaults:
-            raise AttributeError("Invalid Provider setting: %s" % attr)
-
-        try:
-            # check if present in user settings
-            val = self._user_settings[attr]
-        except KeyError:
-            # Fall back to defaults
-            val = self.defaults[attr]
-
-        if val and attr in self.import_strings:
-            val = perform_import(val, attr)
-        self.validate_setting(attr, val)
-        setattr(self, attr, val)
-        return val
-
-    def validate_setting(self, attr, val):
-        if not val and attr in self.mandatory:
-            raise AttributeError("OAuth2Provider setting: %s is mandatory" % attr)
-        return self.defaults[attr]
-
-
-auth_settings = ProviderSettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)
+try:
+    from .provider_settings import *
+except ImportError:
+    pass
