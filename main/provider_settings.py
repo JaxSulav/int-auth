@@ -38,6 +38,8 @@ DEFAULTS = {
     "OAUTH2_SERVER_CLASS": "oauthlib.oauth2.Server",
     "OAUTH2_VALIDATOR_CLASS": "provider.auth_validators.OAuth2Validator",
     "OAUTH2_BACKEND_CLASS": "provider.auth_backends.OAuthLibCore",
+    "ACCESS_TOKEN_GENERATOR": None,
+    "REFRESH_TOKEN_GENERATOR": None
 }
 
 IMPORT_STRINGS = (
@@ -46,6 +48,8 @@ IMPORT_STRINGS = (
     "OAUTH2_SERVER_CLASS",
     "OAUTH2_BACKEND_CLASS",
     "OAUTH2_VALIDATOR_CLASS",
+    "ACCESS_TOKEN_GENERATOR",
+    "REFRESH_TOKEN_GENERATOR"
 )
 
 MANDATORY = (
@@ -136,6 +140,30 @@ class ProviderSettings:
         if not val and attr in self.mandatory:
             raise AttributeError("OAuth2Provider setting: %s is mandatory" % attr)
         return self.defaults[attr]
+
+    @property
+    def server_kwargs(self):
+        """
+        This is used to communicate settings to oauth server.
+        Takes relevant settings and format them accordingly.
+        There's also EXTRA_SERVER_KWARGS that can override every value
+        and is more flexible regarding keys and acceptable values
+        but doesn't have import string magic or any additional
+        processing, callables have to be assigned directly.
+        For the likes of signed_token_generator it means something like
+        {"token_generator": signed_token_generator(privkey, **kwargs)}
+        """
+        kwargs = {
+            key: getattr(self, value)
+            for key, value in [
+                ("token_expires_in", "ACCESS_TOKEN_EXPIRE_SECONDS"),
+                ("refresh_token_expires_in", "REFRESH_TOKEN_EXPIRE_SECONDS"),
+                ("token_generator", "ACCESS_TOKEN_GENERATOR"),
+                ("refresh_token_generator", "REFRESH_TOKEN_GENERATOR"),
+            ]
+        }
+        kwargs.update(self.EXTRA_SERVER_KWARGS)
+        return kwargs
 
 
 auth_settings = ProviderSettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS, MANDATORY)
