@@ -67,11 +67,8 @@ class Grant(models.Model):
     def revoke(self):
         return self.delete()
 
-    def redirect_uri_allowed(self):
-        """
-        ToDo: define this method
-        """
-        raise NotImplementedError('Not implemented')
+    def redirect_uri_allowed(self, uri):
+        return uri == self.redirect_uris
 
 
 def get_grant_model():

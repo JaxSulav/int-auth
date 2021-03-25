@@ -1,1 +1,1 @@
-from .base import AuthorizationView
+from .base import AuthorizationView, TokenView
