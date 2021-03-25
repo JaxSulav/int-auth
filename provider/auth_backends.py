@@ -86,6 +86,12 @@ class OAuthLibCore:
         :param request: The current django.http.HttpRequest object
         :return: provided POST parameters
         """
+        if not request.POST:
+            try:
+                body = json.loads(request.body)
+                request.POST = body
+            except json.decoder.JSONDecodeError:
+                pass
         return request.POST.items()
 
     def validate_authorization_request(self, request):
@@ -120,7 +126,6 @@ class OAuthLibCore:
                 raise oauth2.AccessDeniedError(state=credentials.get("state", None))
 
             # add current user to credentials. this will be used by OAUTH2_VALIDATOR_CLASS
-            credentials["user"] = request.user
             request_uri, http_method, _, request_headers = self._extract_params(request)
 
             headers, body, status = self.server.create_authorization_response(

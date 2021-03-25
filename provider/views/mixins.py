@@ -46,7 +46,7 @@ class OAuthMixin:
 
     @classmethod
     def get_oauthlib_core(cls):
-        if not hasattr(cls, "_oauthlib_core") or auth_settings.ALWAYS_RELOAD_OAUTHLIB_CORE:
+        if not hasattr(cls, "_oauthlib_core"):
             server = cls.get_server()
             core_class = cls.get_oauthlib_backend_class()
             cls._oauthlib_core = core_class(server)

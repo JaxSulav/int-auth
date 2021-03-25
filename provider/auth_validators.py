@@ -32,7 +32,7 @@ from .models import (
 from .scopes import get_scopes_backend
 from main.settings import auth_settings
 
-log = logging.getLogger("oauth2_provider")
+log = logging.getLogger(__name__)
 
 Application = get_application_model()
 AccessToken = get_access_token_model()
@@ -80,7 +80,6 @@ class OAuth2Validator(RequestValidator):
         auth_string = self._extract_basic_auth(request)
         if not auth_string:
             return False
-
         try:
             encoding = request.encoding or settings.DEFAULT_CHARSET or "utf-8"
         except AttributeError:
@@ -392,10 +391,6 @@ class OAuth2Validator(RequestValidator):
             if not grant.is_expired():
                 request.scopes = grant.scope.split(" ")
                 request.user = grant.user
-                if grant.nonce:
-                    request.nonce = grant.nonce
-                if grant.claims:
-                    request.claims = json.loads(grant.claims)
                 return True
             return False
 
@@ -457,11 +452,11 @@ class OAuth2Validator(RequestValidator):
 
     def get_code_challenge(self, code, request):
         grant = Grant.objects.get(code=code, application=request.client)
-        return grant.code_challenge or None
+        return grant.challenge or None
 
     def get_code_challenge_method(self, code, request):
         grant = Grant.objects.get(code=code, application=request.client)
-        return grant.code_challenge_method or None
+        return grant.challenge_method or None
 
     def save_authorization_code(self, client_id, code, request, *args, **kwargs):
         self._create_authorization_code(request, code)
@@ -600,13 +595,11 @@ class OAuth2Validator(RequestValidator):
             application=request.client,
             user=request.user,
             code=code["code"],
-            expires=expires,
-            redirect_uri=request.redirect_uri,
+            expires_at=expires,
+            redirect_uris=request.redirect_uri,
             scope=" ".join(request.scopes),
-            code_challenge=request.code_challenge or "",
-            code_challenge_method=request.code_challenge_method or "",
-            nonce=request.nonce or "",
-            claims=json.dumps(request.claims or {}),
+            challenge=request.code_challenge or "",
+            challenge_method=request.code_challenge_method or "",
         )
 
     def _create_refresh_token(self, request, refresh_token_code, access_token):

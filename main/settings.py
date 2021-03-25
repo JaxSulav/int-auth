@@ -126,6 +126,13 @@ STATIC_URL = '/static/'
 
 DEFAULT_CHARSET = "utf-8"
 
+BASE_URL = "http://localhost:8000"
+
+AUTHORIZATION_URL = BASE_URL + "/authorize/"
+TOKEN_URL = BASE_URL + "/token/"
+
+LOGIN_URL = "/login/"
+
 try:
     from .provider_settings import *
 except ImportError:
