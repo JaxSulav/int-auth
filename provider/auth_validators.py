@@ -600,13 +600,11 @@ class OAuth2Validator(RequestValidator):
             application=request.client,
             user=request.user,
             code=code["code"],
-            expires=expires,
-            redirect_uri=request.redirect_uri,
+            expires_at=expires,
+            redirect_uris=request.redirect_uri,
             scope=" ".join(request.scopes),
-            code_challenge=request.code_challenge or "",
-            code_challenge_method=request.code_challenge_method or "",
-            nonce=request.nonce or "",
-            claims=json.dumps(request.claims or {}),
+            challenge=request.code_challenge or "",
+            challenge_method=request.code_challenge_method or "",
         )
 
     def _create_refresh_token(self, request, refresh_token_code, access_token):

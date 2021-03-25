@@ -31,7 +31,7 @@ DEFAULTS = {
     "ALLOWED_REDIRECT_URI_SCHEMES": ["http", "https"],
     "SCOPES": {"read": "Reading scope", "write": "Writing scope"},
     "DEFAULT_SCOPES": ["__all__"],
-    "SCOPES_BACKEND_CLASS": "oauth2_provider.scopes.SettingsScopes",
+    "SCOPES_BACKEND_CLASS": "provider.scopes.SettingsScopes",
     "_SCOPES": [],
     "_DEFAULT_SCOPES": [],
     "EXTRA_SERVER_KWARGS": {},
@@ -39,7 +39,8 @@ DEFAULTS = {
     "OAUTH2_VALIDATOR_CLASS": "provider.auth_validators.OAuth2Validator",
     "OAUTH2_BACKEND_CLASS": "provider.auth_backends.OAuthLibCore",
     "ACCESS_TOKEN_GENERATOR": None,
-    "REFRESH_TOKEN_GENERATOR": None
+    "REFRESH_TOKEN_GENERATOR": None,
+    "PKCE_REQUIRED": False,
 }
 
 IMPORT_STRINGS = (
@@ -49,7 +50,8 @@ IMPORT_STRINGS = (
     "OAUTH2_BACKEND_CLASS",
     "OAUTH2_VALIDATOR_CLASS",
     "ACCESS_TOKEN_GENERATOR",
-    "REFRESH_TOKEN_GENERATOR"
+    "REFRESH_TOKEN_GENERATOR",
+    "SCOPES_BACKEND_CLASS"
 )
 
 MANDATORY = (
