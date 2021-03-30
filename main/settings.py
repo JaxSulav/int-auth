@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
 INNER_APPS = [
     'provider.apps.ProviderConfig',
+    'users.apps.UsersConfig',
 ]
 
 INSTALLED_APPS += INNER_APPS
