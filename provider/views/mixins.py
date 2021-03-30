@@ -155,7 +155,10 @@ class OAuthMixin:
 class ProtectedResourceMixin(OAuthMixin):
     """
     Helper mixin that implements OAuth2 protection on request dispatch,
-    specially useful for Django Generic Views
+    specially useful for Django Generic Views.
+
+    To validate, we need to pass the token obtained after successful user login in the header as:
+        {'Authorization': 'Bearer <access_token>'}
     """
 
     def dispatch(self, request, *args, **kwargs):

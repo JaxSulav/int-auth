@@ -9,6 +9,9 @@ Application = get_application_model()
 
 
 class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
+    """
+    View to validate if the user can perform the operation on the requested view or not.
+    """
     def get(self, request, *args, **kwargs):
         user = self.request.user
         if user.is_superuser:
@@ -16,8 +19,8 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'msg': 'You can perform the operation'
             }, status=200)
         group = user.groups.last()
-        view_name = self.request.GET.get('view_name')
-        application_id = self.request.GET.get('application_id', None)
+        view_name = self.request.POST.get('view_name')
+        application_id = self.request.POST.get('application_id', None)
         if not application_id:
             return JsonResponse({
                 'msg': 'Missing application id'
