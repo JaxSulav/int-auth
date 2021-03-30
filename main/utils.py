@@ -36,13 +36,11 @@ def populate_permissions():
     for permission in permission_json:
         application_id = permission.get('service_id', None)
         if not application_id:
-            print('no application id supplied')
             continue
         else:
             try:
                 application = Application.objects.get(id=application_id)
             except Application.DoesNotExist:
-                print('application does not exist')
                 continue
         batch_size = 100
         batch_no = 1
@@ -63,7 +61,6 @@ def populate_permissions():
                     permission=PERMISSION_MAPPING.get(role.get('permission', None), 0)
                 )
             except Exception as e:
-                print(e)
                 # exception for duplicate entries
                 continue
             finally:
