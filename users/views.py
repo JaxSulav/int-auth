@@ -11,6 +11,10 @@ Application = get_application_model()
 class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
     def get(self, request, *args, **kwargs):
         user = self.request.user
+        if user.is_superuser:
+            return JsonResponse({
+                'msg': 'You can perform the operation'
+            }, status=200)
         group = user.groups.last()
         view_name = self.request.GET.get('view_name')
         application_id = self.request.GET.get('application_id', None)
