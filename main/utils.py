@@ -1,5 +1,7 @@
 import base64
 
+from django.contrib.auth.models import Group
+
 from users.models import ViewGroupPermission, PERMISSION_MAPPING
 from provider.models import get_application_model
 
@@ -34,22 +36,34 @@ def populate_permissions():
     for permission in permission_json:
         application_id = permission.get('service_id', None)
         if not application_id:
+            print('no application id supplied')
             continue
         else:
             try:
                 application = Application.objects.get(id=application_id)
             except Application.DoesNotExist:
+                print('application does not exist')
                 continue
         batch_size = 100
         batch_no = 1
         for role in permission['roles'][((batch_no - 1) * batch_size): batch_size * batch_no]:
+            group_name = role.get('group_name', None)
+            if not group_name:
+                continue
+            else:
+                try:
+                    group = Group.objects.get(name=group_name)
+                except Group.DoesNotExist:
+                    continue
             try:
                 ViewGroupPermission.objects.get_or_create(
                     application=application,
+                    group=group,
                     view_name=role.get('view_name', ''),
                     permission=PERMISSION_MAPPING.get(role.get('permission', None), 0)
                 )
-            except:
+            except Exception as e:
+                print(e)
                 # exception for duplicate entries
                 continue
             finally:

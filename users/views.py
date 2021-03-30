@@ -21,6 +21,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
         group = user.groups.last()
         view_name = self.request.POST.get('view_name')
         application_id = self.request.POST.get('application_id', None)
+        operation = self.request.POST.get('operation', "read")
         if not application_id:
             return JsonResponse({
                 'msg': 'Missing application id'
@@ -31,20 +32,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             return JsonResponse({
                 'msg': 'Incorrect application id'
             }, status=400)
-        method = self.request.method.upper()
-        if method == "POST":
-            permission_code = "write"
-        elif method == "GET":
-            permission_code = "read"
-        elif method in ["PUT", "PATCH"]:
-            permission_code = "update"
-        elif method == "DELETE":
-            permission_code = "delete"
-        else:
-            return JsonResponse({
-                'msg': 'Method not allowed'
-            }, status=405)
-        permission_code = PERMISSION_MAPPING.get(permission_code, 0)
+        permission_code = PERMISSION_MAPPING.get(operation, 0)
 
         if ViewGroupPermission.objects.filter(
             group=group,
