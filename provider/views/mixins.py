@@ -1,3 +1,5 @@
+from django.http import HttpResponseForbidden
+
 from main.settings import auth_settings
 from provider.exceptions import FatalClientError
 
@@ -148,3 +150,25 @@ class OAuthMixin:
         """
         core = self.get_oauthlib_core()
         return core.authenticate_client(request)
+
+
+class ProtectedResourceMixin(OAuthMixin):
+    """
+    Helper mixin that implements OAuth2 protection on request dispatch,
+    specially useful for Django Generic Views.
+
+    To validate, we need to pass the token obtained after successful user login in the header as:
+        {'Authorization': 'Bearer <access_token>'}
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        # let preflight OPTIONS requests pass
+        if request.method.upper() == "OPTIONS":
+            return super().dispatch(request, *args, **kwargs)
+
+        # check if the request is valid and the protected resource may be accessed
+        valid, r = self.verify_request(request)
+        if valid:
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            return HttpResponseForbidden()
