@@ -22,7 +22,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
         return application_url,
         """
         params = urlparse(url)
-        return params.netloc, params.path
+        return params.scheme + "://" + params.netloc, params.path
 
     def _get_user_groups(self, user):
         groups = user.groups.all()
