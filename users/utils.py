@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.core.cache import cache
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
@@ -47,5 +49,40 @@ def get_user_permissions(token):
     return permissions
 
 
-def map_view_name(view_path):
-    pass
+def map_view_name(view_path, service_id):
+    permission_json = [
+        {
+            "service_id": 1,
+            "view_name": "Report",
+            "roles": [
+                {
+                    "group_name": "Manager",
+                    "permission": "delete"
+                }
+            ],
+            "paths": [
+                r"/report/list",
+                r"/report/\d+"
+            ]
+        },
+        {
+            "service_id": 1,
+            "view_name": "Payment",
+            "roles": [
+                {
+                    "group_name": "Manager",
+                    "permission": "delete"
+                }
+            ],
+            "paths": [
+                r"/payment/list",
+                r"/payment/\d+"
+            ]
+        }
+    ]
+    permissions = [permission for permission in permission_json if permission['service_id'] == service_id]
+    for permission in permissions:
+        regex_paths = permission['paths']
+        if re.match("|".join(regex_paths), view_path):
+            return permission['view_name']
+    return ""

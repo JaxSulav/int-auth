@@ -36,7 +36,6 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             }, status=200)
         groups = self._get_user_groups(user)
         application_url, view_path = self._extract_params(request.POST.get('url'))
-        view_name = map_view_name(view_path)
         operation = 'read'
         try:
             application = Application.objects.get(application_uri=application_url)
@@ -46,7 +45,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error_description': 'This service is not registered in authentication server.'
             }, status=400)
         permission_code = PERMISSION_MAPPING.get(operation, 0)
-
+        view_name = map_view_name(view_path, application.id)
         if ViewGroupPermission.objects.filter(
             group__in=groups,
             view_name=view_name,
@@ -73,7 +72,6 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             }, status=200)
         groups = self._get_user_groups(user)
         application_url, view_path = self._extract_params(request.POST.get('url'))
-        view_name = map_view_name(view_path)
         operation = 'write'
         try:
             application = Application.objects.get(application_uri=application_url)
@@ -83,6 +81,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error_description': 'This service is not registered in authentication server.'
             }, status=400)
         permission_code = PERMISSION_MAPPING.get(operation, 2)
+        view_name = map_view_name(view_path, application.id)
         if ViewGroupPermission.objects.filter(
             group__in=groups,
             view_name=view_name,
@@ -109,7 +108,6 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             }, status=200)
         groups = self._get_user_groups(user)
         application_url, view_path = self._extract_params(request.POST.get('url'))
-        view_name = map_view_name(view_path)
         operation = 'update'
         try:
             application = Application.objects.get(application_uri=application_url)
@@ -119,6 +117,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error_description': 'This service is not registered in authentication server.'
             }, status=400)
         permission_code = PERMISSION_MAPPING.get(operation, 4)
+        view_name = map_view_name(view_path, application.id)
         if ViewGroupPermission.objects.filter(
                 group__in=groups,
                 view_name=view_name,
@@ -145,7 +144,6 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             }, status=200)
         groups = self._get_user_groups(user)
         application_url, view_path = self._extract_params(request.POST.get('url'))
-        view_name = map_view_name(view_path)
         operation = 'update'
         try:
             application = Application.objects.get(application_uri=application_url)
@@ -155,6 +153,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error_description': 'This service is not registered in authentication server.'
             }, status=400)
         permission_code = PERMISSION_MAPPING.get(operation, 4)
+        view_name = map_view_name(view_path, application.id)
         if ViewGroupPermission.objects.filter(
                 group__in=groups,
                 view_name=view_name,
@@ -181,7 +180,6 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
             }, status=200)
         groups = self._get_user_groups(user)
         application_url, view_path = self._extract_params(request.POST.get('url'))
-        view_name = map_view_name(view_path)
         operation = 'delete'
         try:
             application = Application.objects.get(application_uri=application_url)
@@ -190,6 +188,7 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error': 'invalid_request',
                 'error_description': 'This service is not registered in authentication server.'
             }, status=400)
+        view_name = map_view_name(view_path, application.id)
         permission_code = PERMISSION_MAPPING.get(operation, 8)
         if ViewGroupPermission.objects.filter(
                 group__in=groups,

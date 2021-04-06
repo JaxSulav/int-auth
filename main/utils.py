@@ -25,10 +25,31 @@ def populate_permissions():
     # respective service
     permission_json = [
         {
-            'service_id': 1,
-            'roles': [
-                {'group_name': 'Manager', 'view_name': 'Report', 'permission': 'delete'},
-                {'group_name': 'Manager', 'view_name': 'Payment', 'permission': 'read'}
+            "service_id": 1,
+            "view_name": "Report",
+            "roles": [
+                {
+                    "group_name": "Manager",
+                    "permission": "delete"
+                }
+            ],
+            "paths": [
+                r"/report/list",
+                r"/report/\d+"
+            ]
+        },
+        {
+            "service_id": 1,
+            "view_name": "Payment",
+            "roles": [
+                {
+                    "group_name": "Manager",
+                    "permission": "read"
+                }
+            ],
+            "paths": [
+                r"/payment/list",
+                r"/payment/\d+"
             ]
         }
     ]
@@ -57,7 +78,7 @@ def populate_permissions():
                 ViewGroupPermission.objects.get_or_create(
                     application=application,
                     group=group,
-                    view_name=role.get('view_name', ''),
+                    view_name=permission.get('view_name', ''),
                     permission=PERMISSION_MAPPING.get(role.get('permission', None), 0)
                 )
             except Exception as e:
