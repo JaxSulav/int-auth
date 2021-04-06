@@ -1,4 +1,4 @@
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 
 from main.settings import auth_settings
 from provider.exceptions import FatalClientError
@@ -171,4 +171,5 @@ class ProtectedResourceMixin(OAuthMixin):
         if valid:
             return super().dispatch(request, *args, **kwargs)
         else:
-            return HttpResponseForbidden()
+            error = r.oauth2_error
+            return JsonResponse(error)

@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 from django.utils import timezone
 
@@ -96,6 +97,14 @@ class AccessToken(models.Model):
 
     def __str__(self):
         return self.token
+
+    def delete(self):
+        """
+        Delete cache entry for the token
+        """
+        if self.token in cache:
+            cache.delete(self.token)
+        super(AccessToken, self).delete()
 
 
 def get_access_token_model():

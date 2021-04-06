@@ -68,6 +68,12 @@ class Application(models.Model):
     )
 
     redirect_uris = models.TextField(blank=True, help_text=_("Allowed URIs list, space separated"))
+    application_uri = models.TextField(
+        blank=True,
+        help_text=_("URL of the application. Include port number if application is IP hosted. "
+                    "Format: (www.domain.com, 127.0.0.1:8000)"),
+        unique=True
+    )
     client_type = models.CharField(max_length=32, choices=CLIENT_TYPES)
     authorization_grant_type = models.CharField(max_length=32, choices=GRANT_TYPES)
     client_secret = models.CharField(

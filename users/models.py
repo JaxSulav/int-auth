@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import Group
 from django.db import models
 
@@ -47,3 +49,11 @@ class ViewGroupPermission(models.Model):
 
     def __str__(self):
         return '{0} - {1} permission'.format(self.group.name, self.view_name)
+
+    def to_dict(self):
+        obj_json = {
+            'view_name': self.view_name,
+            'application_id': self.application_id,
+            'permission': self.permission
+        }
+        return obj_json

@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .settings import AUTHORIZATION_URL, TOKEN_URL
 from .utils import encodb64
 from provider.models import get_application_model
+from users.utils import cache_user_permissions
 
 Application = get_application_model()
 User = get_user_model()
@@ -59,6 +60,9 @@ def user_login(request):
                     token_response = requests.post(TOKEN_URL, json=body, headers=headers)
                     if token_response.status_code == 200:
                         token_content = json.loads(token_response.content)
+                        token = token_content.get("access_token", "")
+                        if token:
+                            cache_user_permissions(token, user)
                         return JsonResponse(token_content, status=200)
                     else:
                         return JsonResponse({'msg': 'Unable to get token'}, status=token_response.status_code)
