@@ -1,4 +1,4 @@
-# History Service
+# Auth Service
 
 This service deals with the authentication and authorization of the user.
 
