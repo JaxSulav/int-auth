@@ -25,3 +25,7 @@ urlpatterns = [
     path('api/v1/register/', views.UserRegistration.as_view(), name="register"),
     path('api/v1/user/', include('users.urls')),
 ]
+
+# # if inside HAPROXY
+from django.conf.urls import url
+urlpatterns = [url(r'^auth/', include(urlpatterns))]
