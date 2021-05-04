@@ -35,8 +35,9 @@ def user_login(request):
     :param request: a django.HttpRequest object
     """
     if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        request_body = json.loads(request.body)
+        username = request_body.get('username')
+        password = request_body.get('password')
         user = authenticate(username=username, password=password)
         if user:
             if user.is_active:
@@ -126,10 +127,11 @@ class UserRegistration(View):
         return JsonResponse({field: error}, status=400)
 
     def post(self, request):
-        self.username = request.POST.get('username')
-        self.email = request.POST.get('email')
-        self.password1 = request.POST.get('password1')
-        self.password2 = request.POST.get('password2')
+        request_body = json.loads(request.body)
+        self.username = request_body.get('username')
+        self.email = request_body.get('email')
+        self.password1 = request_body.get('password1')
+        self.password2 = request_body.get('password2')
         # and other required fields to register the user
 
         valid_username, msg = self._validate_username()
