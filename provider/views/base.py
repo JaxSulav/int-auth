@@ -46,15 +46,14 @@ class BaseAuthView(OAuthMixin, View):
 
 class AuthorizationView(BaseAuthView):
     def get(self, request, *args, **kwargs):
-        try:
-            user = User.objects.get(id=request.GET.get('user_id'))
-        except User.DoesNotExist:
-            return JsonResponse({'msg': 'User does not exist.'})
+        user_id = request.GET.get('user_id')
+        if not user_id:
+            return JsonResponse({'msg': "user_id missing"})
         try:
             scopes, credentials = self.validate_authorization_request(request)
         except OAuthToolError as err:
             return self.error_response(err, application=None)
-        credentials["user"] = user
+        credentials["user_id"] = user_id
         application = get_application_model().objects.get(client_id=credentials["client_id"])
 
         uri, headers, body, status = self.create_authorization_response(
