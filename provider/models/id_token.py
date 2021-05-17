@@ -1,7 +1,6 @@
 import uuid
 
 from django.apps import apps
-from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -14,7 +13,7 @@ class IDToken(models.Model):
     access user's resources, as in :openid:`2`.
 
     Fields:
-    * :attr:`user` The Django user representing resources' owner
+    * :attr:`user_id` User id from user service
     * :attr:`jti` ID token JWT Token ID, to identify an individual token
     * :attr:`application` Application instance
     * :attr:`expires` Date and time of token expiration, in DateTime format
@@ -24,13 +23,7 @@ class IDToken(models.Model):
     """
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="id_tokens"
-    )
+    user_id = models.IntegerField(null=True, blank=True)
     jti = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, verbose_name="JWT Token ID")
     application = models.ForeignKey(
         auth_settings.APPLICATION_MODEL,
