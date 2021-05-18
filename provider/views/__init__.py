@@ -1,1 +1,1 @@
-from .base import AuthorizationView, TokenView
+from .base import AuthorizationView, TokenView, AccessTokenValidator

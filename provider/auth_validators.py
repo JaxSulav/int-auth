@@ -578,6 +578,7 @@ class OAuth2Validator(RequestValidator):
         id_token = token.get("id_token", None)
         if id_token:
             id_token = self._load_id_token(id_token)
+        AccessToken.objects.filter(user_id=request.user_id).update(invalid=True)
         return AccessToken.objects.create(
             user=request.user,
             scope=token["scope"],

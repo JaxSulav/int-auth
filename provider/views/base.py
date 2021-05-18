@@ -3,22 +3,20 @@ import logging
 import urllib.parse
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import FormView, View
+from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.debug import sensitive_post_parameters
 
 from .mixins import OAuthMixin
 from main.settings import auth_settings
 from provider.exceptions import OAuthToolError
 from provider.http import OAuth2ResponseRedirect
 from provider.models import get_application_model, get_access_token_model
-from provider.scopes import get_scopes_backend
 
 log = logging.getLogger(__name__)
 User = get_user_model()
+AccessToken = get_access_token_model()
 
 
 class BaseAuthView(OAuthMixin, View):
@@ -108,3 +106,28 @@ class TokenView(OAuthMixin, View):
         for k, v in headers.items():
             response[k] = v
         return response
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AccessTokenValidator(View):
+    """
+    Implements an endpoint to check whether the given access token is valid
+    """
+    def post(self, request, *args, **kwargs):
+        request_body = json.loads(request.body)
+        access_token = request_body.get('access_token')
+        user_id = request_body.get('user_id')
+        user_access_token = AccessToken.objects.filter(user_id=user_id, invalid=False).last()
+        if user_access_token:
+            if user_access_token.token == access_token and not user_access_token.is_expired():
+                return JsonResponse({
+                    'message': 'Validation success.'
+                }, status=200)
+            else:
+                return JsonResponse({
+                    'message': "Invalid Token."
+                }, status=400)
+        else:
+            return JsonResponse({
+                'message': "Invalid Token."
+            }, status=400)
