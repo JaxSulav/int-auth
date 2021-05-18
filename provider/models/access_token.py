@@ -16,6 +16,7 @@ class AccessToken(models.Model):
     * :attr:`source_refresh_token` If from a refresh, the consumed RefeshToken
     * :attr:`token` Access token
     * :attr:`application` Application instance
+    * :attr: `invalid` To check if this token can still be used or not
     * :attr:`expires` Date and time of token expiration, in DateTime format
     * :attr:`scope` Allowed scopes
     """
@@ -54,6 +55,7 @@ class AccessToken(models.Model):
         null=True,
     )
     expires = models.DateTimeField()
+    invalid = models.BooleanField(default=False)
     scope = models.TextField(blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
