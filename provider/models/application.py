@@ -1,7 +1,6 @@
 from urllib.parse import parse_qsl, urlparse
 
 from django.apps import apps
-from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -25,7 +24,7 @@ class Application(models.Model):
 
     * :attr:`client_id` The client identifier issued to the client during the
                         registration process
-    * :attr:`user` ref to a Django user
+    * :attr:`user_id` User id from user service
     * :attr:`redirect_uris` List of allowed redirect uri. The string consists of
                             valid URLs separated by space
     * :attr:`client_type` Client type
@@ -59,13 +58,7 @@ class Application(models.Model):
 
     id = models.BigAutoField(primary_key=True)
     client_id = models.CharField(max_length=100, unique=True, default=generate_client_id, db_index=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name="applications",
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE
-    )
+    user_id = models.IntegerField(null=True, blank=True)
 
     redirect_uris = models.TextField(blank=True, help_text=_("Allowed URIs list, space separated"))
     application_uri = models.TextField(

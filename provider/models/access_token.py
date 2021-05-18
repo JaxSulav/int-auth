@@ -1,5 +1,4 @@
 from django.apps import apps
-from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from django.utils import timezone
@@ -22,13 +21,7 @@ class AccessToken(models.Model):
     """
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        related_name="%(app_label)s_%(class)s",
-    )
+    user_id = models.IntegerField(null=True, blank=True)
     source_refresh_token = models.OneToOneField(
         # unique=True implied by the OneToOneField
         auth_settings.REFRESH_TOKEN_MODEL,
