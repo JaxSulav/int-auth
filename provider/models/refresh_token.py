@@ -1,5 +1,4 @@
 from django.apps import apps
-from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -13,7 +12,7 @@ class RefreshToken(models.Model):
     when it expires.
 
     Fields:
-    * :attr:`user` The Django user representing resource owner
+    * :attr:`user_id` User id from user service
     * :attr:`token` Token value
     * :attr:`application` Application instance
     * :attr:`access_token` AccessToken instance this refresh token is bounded to
@@ -21,7 +20,7 @@ class RefreshToken(models.Model):
     """
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="refresh_tokens", on_delete=models.CASCADE)
+    user_id = models.IntegerField(null=True, blank=True)
     token = models.CharField(max_length=255)
     application = models.ForeignKey(auth_settings.APPLICATION_MODEL, on_delete=models.CASCADE)
     access_token = models.OneToOneField(
