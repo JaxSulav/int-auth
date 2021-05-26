@@ -1,1 +1,1 @@
-from .base import AuthorizationView, TokenView, AccessTokenValidator
+from .base import AuthorizationView, TokenView, AccessTokenValidator, get_access_token

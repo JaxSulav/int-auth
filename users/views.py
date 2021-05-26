@@ -352,22 +352,3 @@ class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):
                 'error': 'not_permitted',
                 'error_description': 'User is not permitted to perform this action'
             })
-
-
-class ReportView(ProtectedResourceMixin, OAuthMixin, View):
-    def get(self, request, *args, **kwargs):
-        auth = request.headers.get("AUTHORIZATION", None)
-        splitted = auth.split(" ", 1)
-        auth_type, auth_string = splitted
-        permissions = get_user_permissions(auth_string)
-        view_name = "Report"
-        # for read
-        perm = 1
-        if any((item['view_name'] == view_name and item['permission'] >= perm) for item in permissions):
-            return JsonResponse({
-                'msg': 'Authorization granted'
-            }, status=200)
-        return JsonResponse({
-            'error': 'unauthorized_access',
-            'error_description': 'Unauthorized access'
-        }, status=403)

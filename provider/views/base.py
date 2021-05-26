@@ -5,6 +5,7 @@ import urllib.parse
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 
@@ -130,3 +131,17 @@ class AccessTokenValidator(View):
             return JsonResponse({
                 'message': "Invalid Token."
             }, status=400)
+
+
+def get_access_token(request):
+    if request.method == "GET":
+        user_id = request.GET.get('user_id')
+        token = AccessToken.objects.filter(user_id=user_id, expires__gte=timezone.now(), invalid=False).last()
+        if token:
+            return JsonResponse({'token': token.token}, status=200)
+        else:
+            return JsonResponse({'msg': 'Token missing'}, status=200)
+    else:
+        return JsonResponse({
+            'msg': 'Method not allowed'
+        }, status=405)

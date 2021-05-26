@@ -20,8 +20,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('provider.urls')),
-    path('api/v1/', include('users.urls')),
+    path('api/v1/', include('provider.urls')),
 ]
 
 # # if inside HAPROXY
