@@ -113,23 +113,33 @@ class AccessTokenValidator(View):
     """
     Implements an endpoint to check whether the given access token is valid
     """
+    def _extract_header(self, request):
+        auth = request.headers.get('AUTHORIZATION', None)
+        splitted = auth.split(" ", 1)
+        if len(splitted) != 2:
+            return None
+        auth_type, auth_string = splitted
+        return auth_string
+
     def post(self, request, *args, **kwargs):
-        request_body = json.loads(request.body)
-        access_token = request_body.get('access_token')
-        user_id = request_body.get('user_id')
-        user_access_token = AccessToken.objects.filter(user_id=user_id, invalid=False).last()
-        if user_access_token:
-            if user_access_token.token == access_token and not user_access_token.is_expired():
-                return JsonResponse({
-                    'message': 'Validation success.'
-                }, status=200)
-            else:
-                return JsonResponse({
-                    'message': "Invalid Token."
-                }, status=400)
-        else:
+        access_token = self._extract_header(request)
+        if not access_token:
             return JsonResponse({
-                'message': "Invalid Token."
+                'msg': 'Token missing',
+                'success': False
+            }, status=400)
+        try:
+            user_access_token = AccessToken.objects.get(token=access_token, invalid=False, expires__gt=timezone.now())
+            user_id = user_access_token.user_id
+            # need to check user permissions too
+            return JsonResponse({
+                'msg': 'Token valid',
+                'success': True
+            }, status=200)
+        except AccessToken.DoesNotExist:
+            return JsonResponse({
+                'msg': 'Invalid Token.',
+                'success': False
             }, status=400)
 
 
