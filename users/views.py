@@ -9,18 +9,22 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import viewsets, status
 
-from provider.views.mixins import OAuthMixin, ProtectedResourceMixin
-from users.models import PERMISSION_MAPPING, ViewGroupPermission
-from users.utils import get_user_permissions, map_view_name
-
-from main.settings import AUTHORIZATION_URL, TOKEN_URL
+from .models import PERMISSION_MAPPING, ViewGroupPermission
+from .utils import get_user_permissions, map_view_name
+from .serializers import UserCreationSerializer
+from main.settings import AUTHORIZATION_URL, TOKEN_URL, BASE_URL
 from main.utils import encodb64
 from provider.models import get_application_model
+from provider.views.mixins import OAuthMixin, ProtectedResourceMixin
 from users.utils import cache_user_permissions
+from utils.response_utils import body_response, error_response, success_response
 
 Application = get_application_model()
 User = get_user_model()
+AUTHORIZATION_URL = BASE_URL + AUTHORIZATION_URL
+TOKEN_URL = BASE_URL + TOKEN_URL
 
 
 @csrf_exempt
@@ -67,94 +71,52 @@ def user_login(request):
                     token_response = requests.post(TOKEN_URL, json=body, headers=headers)
                     if token_response.status_code == 200:
                         token_content = json.loads(token_response.content)
+                        token_content['user_id'] = user.id
                         token = token_content.get("access_token", "")
                         if token:
                             cache_user_permissions(token, user)
-                        return JsonResponse(token_content, status=200)
+                        return body_response(token_content, resp_status=status.HTTP_200_OK)
                     else:
-                        return JsonResponse({'msg': 'Unable to get token'}, status=token_response.status_code)
+                        return error_response(error='Cannot obtain token.', resp_status=token_response.status_code)
                 else:
-                    return JsonResponse({'msg': 'Cannot obtain token.'}, status=code_response.status_code)
+                    return error_response(error='Cannot obtain token.', resp_status=code_response.status_code)
             else:
-                return JsonResponse({'msg': 'User not active.'}, status=400)
+                return error_response(error='User not active.')
         else:
-            return JsonResponse({'msg': 'User credentials incorrect.'}, status=400)
+            return error_response(error='User credentials incorrect.')
+    else:
+        return error_response(error='Method not allowed.', resp_status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class UserRegistration(View):
-    username = ""
-    email = ""
-    password1 = ""
-    password2 = ""
+class UserRegistration(ProtectedResourceMixin, viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserCreationSerializer
 
-    def _validate_username(self):
-        if User.objects.filter(username=self.username).exists():
-            return False, 'User with this username already exists.'
-        if self.username == '':
-            return False, 'Username should not be empty.'
-        return True, ''
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = User()
+            user.username = serializer.validated_data.get("username")
+            user.email = serializer.validated_data.get("email")
+            password = serializer.validated_data.get("password")
+            if not self._password_criteria(password):
+                return error_response(field='password', error='Password did not meet criteria.')
+            user.set_password(password)
+            user.save()
+            response_body = {
+                "message": "User successfully created.",
+                "user_id": user.id
+            }
+            return body_response(response_body, resp_status=status.HTTP_201_CREATED)
+        else:
+            return error_response(error=serializer.errors)
 
-    def _validate_email(self):
-        if User.objects.filter(email=self.email).exists():
-            return False, 'User with this email already exists.'
-        if self.email == '':
-            return False, 'Email not valid.'
-        return True, ''
-
-    def _compare_passwords(self):
-        if not self.password1 == self.password2:
-            return False
-        return True
-
-    def _password_criteria(self):
-        pattern = r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
-        match = re.match(pattern, self.password1)
+    def _password_criteria(self, password):
+        pattern = r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"
+        match = re.match(pattern, password)
         if match:
             return True
         return False
-
-    def _validate_password(self):
-        match = self._compare_passwords()
-        if not match:
-            return False, 'Passwords did not match'
-        satisfied = self._password_criteria()
-        if not satisfied:
-            return False, 'Password did not meet criteria.'
-        return True, ''
-
-    def error_response(self, field, error):
-        return JsonResponse({field: error}, status=400)
-
-    def post(self, request):
-        request_body = json.loads(request.body)
-        self.username = request_body.get('username')
-        self.email = request_body.get('email')
-        self.password1 = request_body.get('password1')
-        self.password2 = request_body.get('password2')
-        # and other required fields to register the user
-
-        valid_username, msg = self._validate_username()
-        if not valid_username:
-            return self.error_response('username', msg)
-        valid_email, msg = self._validate_email()
-        if not valid_email:
-            return self.error_response('email', msg)
-        valid_password, msg = self._validate_password()
-        if not valid_password:
-            return self.error_response('password', msg)
-
-        # if fields are validated
-        user = User.objects.create(
-            username=self.username,
-            email=self.email,
-        )
-        user.set_password(self.password1)
-        user.save()
-        return JsonResponse({
-            'msg': 'User successfully created.',
-            'user_id': user.id
-        }, status=200)
 
 
 class ValidateViewPermission(ProtectedResourceMixin, OAuthMixin, View):

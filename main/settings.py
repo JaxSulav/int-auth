@@ -13,9 +13,12 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 import os
 
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework'
 ]
 
 INNER_APPS = [
@@ -84,11 +88,20 @@ WSGI_APPLICATION = 'main.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_NAME'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': 'db',
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -146,12 +159,12 @@ STATIC_URL = '/static/'
 
 DEFAULT_CHARSET = "utf-8"
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.environ.get('BASE_URL', 'http://localhost:8000')
 
-AUTHORIZATION_URL = BASE_URL + "/authorize/"
-TOKEN_URL = BASE_URL + "/token/"
+AUTHORIZATION_URL = os.environ.get('AUTHORIZATION_URL', '/auth/api/v1/authorize/')
+TOKEN_URL = os.environ.get('TOKEN_URL', '/auth/api/v1/token/')
 
-LOGIN_URL = "/login/"
+LOGIN_URL = os.environ.get('LOGIN_URL', '/auth/api/v1/user/login/')
 
 try:
     from .provider_settings import *

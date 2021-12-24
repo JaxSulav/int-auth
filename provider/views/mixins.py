@@ -3,6 +3,8 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from main.settings import auth_settings
 from provider.exceptions import FatalClientError
 
+from utils.response_utils import error_response
+
 
 class OAuthMixin:
     server_class = None
@@ -171,5 +173,4 @@ class ProtectedResourceMixin(OAuthMixin):
         if valid:
             return super().dispatch(request, *args, **kwargs)
         else:
-            error = r.oauth2_error
-            return JsonResponse(error)
+            return error_response(error="Token missing or invalid.")

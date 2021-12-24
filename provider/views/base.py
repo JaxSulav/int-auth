@@ -144,6 +144,11 @@ class AccessTokenValidator(View):
 
 
 def get_access_token(request):
+    """
+    view to get access token for a specific user id
+    :param request: Django Request object
+    :return: JsonResponse
+    """
     if request.method == "GET":
         user_id = request.GET.get('user_id')
         token = AccessToken.objects.filter(user_id=user_id, expires__gte=timezone.now(), invalid=False).last()
