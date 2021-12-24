@@ -64,3 +64,5 @@ env/
 venv/
 
 .vscode/
+
+.env

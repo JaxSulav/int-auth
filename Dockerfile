@@ -3,6 +3,9 @@ FROM python:3.6-slim
 
 
 RUN apt-get update
+
+RUN apt install -y netcat
+
 # RUN apt-get install -y mysql-client
 RUN pip install --upgrade pip
 
@@ -13,8 +16,8 @@ ADD . /usr/src/app
 WORKDIR /usr/src/app
 
 COPY requirements.txt ./
-COPY entrypoint.sh /
-RUN chmod +x /entrypoint.sh
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
 
 # Expose ports
 EXPOSE 8000
@@ -30,4 +33,4 @@ EXPOSE 8000
 RUN pip install --no-cache-dir -r requirements.txt
 # RUN python manage.py collectstatic --noinput
 
-ENTRYPOINT [ "sh", "/entrypoint.sh" ]
+ENTRYPOINT [ "sh", "/usr/src/app/entrypoint.sh" ]
