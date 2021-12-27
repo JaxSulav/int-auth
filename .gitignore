@@ -66,3 +66,4 @@ venv/
 .vscode/
 
 .env
+data/
