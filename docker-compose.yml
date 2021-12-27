@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres
+    container_name: auth_db
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=interview
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - authnetwork
+    ports:
+      - "5431:5432"
+  backend:
+    build: .
+    container_name: auth_backend
+    volumes:
+      - .:/usr/src/app/
+    environment:
+      - POSTGRES_NAME=interview
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    links:
+      - db:db
+    networks:
+      - authnetwork
+    restart: always
+
+networks:
+  authnetwork:
+    driver: bridge
