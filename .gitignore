@@ -21,7 +21,6 @@ dist/
 
 # Maven
 target/
-dist/
 
 # JetBrains IDE
 .idea/
@@ -49,7 +48,6 @@ Thumbs.db
 *.wmv
 
 ### Django ###
-*.log
 *.pot
 *.pyc
 __pycache__/
