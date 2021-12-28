@@ -1,0 +1,14 @@
+syntax="proto3";
+
+message TokenValidatorRequest {
+    string bearer = 1;
+}
+message TokenValidatorResponse {
+    string msg = 1;
+    bool success = 2;
+}
+
+
+service Auth{
+    rpc ValidateToken(TokenValidatorRequest) returns (TokenValidatorResponse) {}
+}

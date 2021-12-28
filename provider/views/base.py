@@ -122,6 +122,10 @@ class AccessTokenValidator(View):
         return auth_string
 
     def post(self, request, *args, **kwargs):
+        tz = timezone.now()
+        print("YOOOOO")
+        print(tz)
+        print(type(tz))
         access_token = self._extract_header(request)
         if not access_token:
             return JsonResponse({

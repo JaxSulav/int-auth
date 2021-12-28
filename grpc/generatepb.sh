@@ -1,0 +1,1 @@
+python -m grpc_tools.protoc -I./protos --python_out=./libs --grpc_python_out=./libs ./protos/verification.proto
