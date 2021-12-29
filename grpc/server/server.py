@@ -18,7 +18,6 @@ class ValidationService(grpcpb.Auth):
         dt = datetime.now()
         cursor.execute('''SELECT * from provider_accesstoken WHERE token=%s and invalid=%s and expires<%s;''', (token, False, dt))
         result = cursor.fetchone()
-        print(result)
         return result
 
 
