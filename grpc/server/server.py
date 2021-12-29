@@ -8,14 +8,15 @@ from libs import verification_pb2 as pb
 from concurrent import futures
 
 from sql_connector import Connect
-from datetime import datetime
+from datetime import datetime, timezone
 
 db = Connect()
 
 class ValidationService(grpcpb.Auth):
     def get_access_token(self, token):
         cursor = db.conn.cursor()
-        cursor.execute('''SELECT * from provider_accesstoken WHERE token=%s and invalid=%s;''', (token, False))
+        dt = datetime.now()
+        cursor.execute('''SELECT * from provider_accesstoken WHERE token=%s and invalid=%s and expires<%s;''', (token, False, dt))
         result = cursor.fetchone()
         print(result)
         return result
@@ -30,14 +31,13 @@ class ValidationService(grpcpb.Auth):
             )
         try:
             user_access_token = self.get_access_token(access_token)
-            # user_id = user_access_token.user_id
-            # print("user_id", user_id)
-            # need to check user permissions too
             if not user_access_token:
                 return pb.TokenValidatorResponse(
                     msg= 'Invalid Token',
                     success= False
                 )
+            user_id = user_access_token[len(user_access_token)-2]
+            # need to check user permissions too
             return pb.TokenValidatorResponse(
                 msg= 'Token valid',
                 success= True
