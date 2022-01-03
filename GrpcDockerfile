@@ -1,0 +1,11 @@
+FROM python:3.6-slim as auth_grpc_server
+RUN pip install --upgrade pip
+ADD grpc/ /usr/src/app
+ADD .env /usr/src/app
+WORKDIR /usr/src/app
+COPY requirements/grpc_requirements.txt ./
+COPY grpc_entrypoint.sh ./
+RUN chmod +x grpc_entrypoint.sh
+EXPOSE 50051
+RUN pip install --no-cache-dir -r grpc_requirements.txt
+ENTRYPOINT [ "sh", "/usr/src/app/grpc_entrypoint.sh" ]

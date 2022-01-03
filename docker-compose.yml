@@ -20,7 +20,9 @@ services:
     ports:
       - "5431:5432"
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: AuthDockerfile
     container_name: auth_backend
     volumes:
       - .:/usr/src/app/
@@ -29,7 +31,6 @@ services:
       - POSTGRES_NAME=interview
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - HOST_IP=$DOCKER_HOST_IP
     expose:
       - 8000
     depends_on:
@@ -51,6 +52,25 @@ services:
       - backend
     networks:
       - authnetwork
+  grpc_server:
+    build:
+      context: .
+      dockerfile: GrpcDockerfile
+    container_name: auth_grpc_server
+    volumes:
+    - .:/usr/src/app/
+    environment:
+      - POSTGRES_NAME=interview
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    expose:
+      - 50051
+    depends_on:
+      - db
+    networks:
+      - authnetwork
+    restart: always
+
 networks:
   authnetwork:
     driver: bridge
