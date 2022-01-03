@@ -10,6 +10,11 @@ services:
       - POSTGRES_DB=interview
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - authnetwork
     ports:
@@ -19,12 +24,14 @@ services:
     container_name: auth_backend
     volumes:
       - .:/usr/src/app/
+      - ./static/:/usr/src/app/static/
     environment:
       - POSTGRES_NAME=interview
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-    ports:
-      - "8000:8000"
+      - HOST_IP=$DOCKER_HOST_IP
+    expose:
+      - 8000
     depends_on:
       - db
     links:
@@ -32,7 +39,18 @@ services:
     networks:
       - authnetwork
     restart: always
-
+  nginx:
+    image: nginx:latest
+    container_name: auth_nginx
+    ports:
+      - "81:80"
+    volumes:
+      - ./static/:/static/
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - backend
+    networks:
+      - authnetwork
 networks:
   authnetwork:
     driver: bridge
