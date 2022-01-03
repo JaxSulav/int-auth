@@ -1,91 +1,132 @@
 import json
 import re
-import requests
+import urllib.parse
 
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model, authenticate, login
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
 
 from .models import PERMISSION_MAPPING, ViewGroupPermission
-from .utils import get_user_permissions, map_view_name
+from .utils import map_view_name
 from .serializers import UserCreationSerializer
-from main.settings import AUTHORIZATION_URL, TOKEN_URL, BASE_URL
 from main.utils import encodb64
+from provider.exceptions import OAuthToolError
 from provider.models import get_application_model
 from provider.views.mixins import OAuthMixin, ProtectedResourceMixin
-from users.utils import cache_user_permissions
 from utils.response_utils import body_response, error_response, success_response
 
 Application = get_application_model()
 User = get_user_model()
-AUTHORIZATION_URL = BASE_URL + AUTHORIZATION_URL
-TOKEN_URL = BASE_URL + TOKEN_URL
 
 
-@csrf_exempt
-def user_login(request):
-    """
-    Log in the user.
-    If user is authenticated, start the OAuth Authorization Grant flow.
-    First obtain the authorization code from authorization endpoint of provider,
-    The client_id, client_secret and authorization_code("obtained as access token from response") is passed to
-    token endpoint of provider.
-    The token endpoint provides the required access_token, refresh_token, expire_time if the request made is valid.
-    :param request: a django.HttpRequest object
-    """
-    if request.method == "POST":
+@method_decorator(csrf_exempt, name='dispatch')
+class UserLoginView(OAuthMixin, View):
+
+    def delete_params(self, request):
+        updated_request = request.GET.copy()
+
+        del updated_request['user_id']
+        del updated_request['client_id']
+        del updated_request['response_type']
+
+        request.META["QUERY_STRING"] = ""
+
+    def post(self, request, *args, **kwargs):
         request_body = json.loads(request.body)
         username = request_body.get('username')
         password = request_body.get('password')
+        if not username or not password:
+            return error_response(error="Username or password is missing.")
         user = authenticate(username=username, password=password)
         if user:
             if user.is_active:
                 login(request, user)
                 application = Application.objects.last()
                 client_id = application.client_id
+                user_id = user.id
                 response_type = "code"
-                payload = {'client_id': client_id, 'response_type': response_type, 'user_id': user.id}
-                code_response = requests.get(AUTHORIZATION_URL, params=payload)
-                if code_response.status_code == 200:
-                    response_json = json.loads(code_response.content)
-                    client_id = response_json['client_id']
-                    client_secret = response_json['client_secret']
-                    code = response_json['access_token']
-                    grant_type = "authorization_code"
-                    encoded_key = encodb64(client_id, client_secret).decode('utf-8')
 
-                    # we need to pass the client id and secret in an encoded format
-                    headers = {
-                        'Authorization': 'Basic {}'.format(encoded_key),
-                        'Content-Type': 'x-www-form-urlencoded'
-                    }
-                    body = {
-                        'code': code,
-                        'grant_type': grant_type
-                    }
-                    token_response = requests.post(TOKEN_URL, json=body, headers=headers)
-                    if token_response.status_code == 200:
-                        token_content = json.loads(token_response.content)
-                        token_content['user_id'] = user.id
-                        token = token_content.get("access_token", "")
-                        if token:
-                            cache_user_permissions(token, user)
-                        return body_response(token_content, resp_status=status.HTTP_200_OK)
-                    else:
-                        return error_response(error='Cannot obtain token.', resp_status=token_response.status_code)
-                else:
-                    return error_response(error='Cannot obtain token.', resp_status=code_response.status_code)
+                # add extra data to request.GET
+                request.GET = request.GET.copy()
+                update_dict = {"client_id": client_id, "user_id": user_id, "response_type": response_type}
+                request.GET.update(update_dict)
+
+                request.META["QUERY_STRING"] = f"user_id={user_id}&client_id={client_id}&response_type={response_type}"
+
+                try:
+                    scopes, credentials = self.validate_authorization_request(request)
+                except OAuthToolError:
+                    return error_response(error="Cannot obtain token.")
+                credentials["user_id"] = user_id
+                application = get_application_model().objects.get(client_id=credentials["client_id"])
+
+                uri, headers, body, status = self.create_authorization_response(
+                    request=self.request, scopes=" ".join(scopes), credentials=credentials, allow=True
+                )
+                response_body = self.redirect(uri, application)
+                client_secret = response_body['client_secret']
+                code = response_body['access_token']
+                grant_type = "authorization_code"
+                encoded_key = encodb64(client_id, client_secret).decode('utf-8')
+                headers = {
+                    'HTTP_AUTHORIZATION': 'Basic {}'.format(encoded_key),
+                    'CONTENT_TYPE': 'multipart/formdata'
+                }
+                body = {
+                    'code': code,
+                    'grant_type': grant_type
+                }
+
+                self.delete_params(request)
+
+                request.POST.update(body)
+                request.META.update(headers)
+
+                try:
+                    url, headers, body, status = self.create_token_response(request)
+                except OAuthToolError:
+                    return error_response(error="Cannot obtain access token.")
+                response = HttpResponse(content=body, status=status)
+                for k, v in headers.items():
+                    response[k] = v
+                return response
             else:
-                return error_response(error='User not active.')
-        else:
-            return error_response(error='User credentials incorrect.')
-    else:
-        return error_response(error='Method not allowed.', resp_status=status.HTTP_405_METHOD_NOT_ALLOWED)
+                return error_response(error="User is not activated.")
+        return error_response(error="Invalid user credentials.")
+
+    def redirect(self, redirect_to, application, token=None):
+        """
+        Redirects to the desired redirect_uri if stated.
+        Else returns a JsonResponse including code.
+        Currently only return the JsonResponse
+        """
+        parsed_redirect = urllib.parse.urlparse(redirect_to)
+        try:
+            error = urllib.parse.parse_qs(parsed_redirect.query)["error"][0]
+            response = {
+                "error": error
+            }
+        except KeyError:
+            response = {
+                "error": 'Cannot generate code'
+            }
+        try:
+            code = urllib.parse.parse_qs(parsed_redirect.query)["code"][0]
+            response = {
+                "access_token": code,
+                "token_uri": redirect_to,
+                "client_id": application.client_id,
+                "client_secret": application.client_secret,
+            }
+        except KeyError:
+            pass
+
+        return response
 
 
 class UserRegistration(ProtectedResourceMixin, viewsets.ModelViewSet):

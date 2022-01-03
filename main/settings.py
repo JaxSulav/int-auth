@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_NAME'),
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': 'localhost',
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
         'PORT': '5432',
     }
 }
@@ -159,12 +159,16 @@ STATIC_URL = '/static/'
 
 DEFAULT_CHARSET = "utf-8"
 
-BASE_URL = os.environ.get('BASE_URL', 'http://localhost:8000')
-
-AUTHORIZATION_URL = os.environ.get('AUTHORIZATION_URL', '/auth/api/v1/authorize/')
-TOKEN_URL = os.environ.get('TOKEN_URL', '/auth/api/v1/token/')
-
 LOGIN_URL = os.environ.get('LOGIN_URL', '/auth/api/v1/user/login/')
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
+USE_X_FORWARDED_HOST = True
 
 try:
     from .provider_settings import *
