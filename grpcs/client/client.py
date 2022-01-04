@@ -4,8 +4,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-sys.path.append("..")
-from libs import verification_pb2_grpc, verification_pb2
+from grpcs.libs import verification_pb2_grpc, verification_pb2
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 

@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import verification_pb2 as verification__pb2
+from grpcs.libs import verification_pb2 as protos_dot_verification__pb2
 
 
 class AuthStub(object):
@@ -16,8 +16,8 @@ class AuthStub(object):
         """
         self.ValidateToken = channel.unary_unary(
                 '/Auth/ValidateToken',
-                request_serializer=verification__pb2.TokenValidatorRequest.SerializeToString,
-                response_deserializer=verification__pb2.TokenValidatorResponse.FromString,
+                request_serializer=protos_dot_verification__pb2.TokenValidatorRequest.SerializeToString,
+                response_deserializer=protos_dot_verification__pb2.TokenValidatorResponse.FromString,
                 )
 
 
@@ -35,8 +35,8 @@ def add_AuthServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'ValidateToken': grpc.unary_unary_rpc_method_handler(
                     servicer.ValidateToken,
-                    request_deserializer=verification__pb2.TokenValidatorRequest.FromString,
-                    response_serializer=verification__pb2.TokenValidatorResponse.SerializeToString,
+                    request_deserializer=protos_dot_verification__pb2.TokenValidatorRequest.FromString,
+                    response_serializer=protos_dot_verification__pb2.TokenValidatorResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -60,7 +60,7 @@ class Auth(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Auth/ValidateToken',
-            verification__pb2.TokenValidatorRequest.SerializeToString,
-            verification__pb2.TokenValidatorResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              protos_dot_verification__pb2.TokenValidatorRequest.SerializeToString,
+                                              protos_dot_verification__pb2.TokenValidatorResponse.FromString,
+                                              options, channel_credentials,
+                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

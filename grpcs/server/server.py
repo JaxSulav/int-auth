@@ -1,13 +1,11 @@
 import grpc
 import sys
-sys.path.append("..")
-sys.path.append("../..")
 
-from libs import verification_pb2_grpc as grpcpb
-from libs import verification_pb2 as pb
+from grpcs.libs import verification_pb2_grpc as grpcpb
+from grpcs.libs import verification_pb2 as pb
 from concurrent import futures
 
-from sql_connector import Connect
+from .sql_connector import Connect
 from datetime import datetime, timezone
 
 db = Connect()
@@ -21,9 +19,11 @@ class ValidationService(grpcpb.Auth):
             '''SELECT * from provider_accesstoken WHERE token=%s and invalid=%s and expires<%s;''',
             (token, False, dt))
         result = cursor.fetchone()
+        print("rsult is : ", result)
         return result
 
     def ValidateToken(self, request, target):
+        print("is this running?")
         access_token = request.bearer
         if not access_token:
             return pb.TokenValidatorResponse(

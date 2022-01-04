@@ -45,6 +45,7 @@ services:
     container_name: auth_nginx
     ports:
       - "81:80"
+      - "50051:50051"
     volumes:
       - ./static/:/static/
       - ./nginx:/etc/nginx/conf.d
@@ -56,6 +57,7 @@ services:
     build:
       context: .
       dockerfile: GrpcDockerfile
+    command: bash -c "python -m grpcs.server.server"
     container_name: auth_grpc_server
     volumes:
     - .:/usr/src/app/
